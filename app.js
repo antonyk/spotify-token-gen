@@ -7,15 +7,19 @@
  * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
  */
 
+require('dotenv').config(/* add your dotenv options here */)
+const url = require('url')
 var express = require('express'); // Express web server framework
 var request = require('request'); // "Request" library
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 
-var client_id = '34f0135d39e843f9ac42da7e5780d113'; // Your client id
-var client_secret = '5ab028fe88ea495997333b84060478ac'; // Your secret
-var redirect_uri = 'http://localhost:8888/callback/'; // Your redirect uri
+const client_id = process.env.CLIENT_ID || ''; // Your client id
+const client_secret = process.env.CLIENT_SECRET || ''; // Your secret
+const redirect_endpoint_path = "/callback/"
+
+// var redirect_uri = 'http://localhost:8888/callback/'; // Your redirect uri
 
 /**
  * Generates a random string containing numbers and letters
@@ -41,6 +45,8 @@ app.use(express.static(__dirname + '/public'))
    .use(cookieParser());
 
 app.get('/login', function(req, res) {
+  const redirect_uri = urlBuilder(req, redirect_endpoint_path)
+  console.log(client_id, client_secret)
 
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
@@ -67,6 +73,7 @@ app.get('/login', function(req, res) {
 });
 
 app.get('/callback', function(req, res) {
+  const redirect_uri = urlBuilder(req, redirect_endpoint_path)
 
   // your application requests refresh and access tokens
   // after checking the state parameter
@@ -157,3 +164,13 @@ app.get('/refresh_token', function(req, res) {
 const PORT = process.env.PORT || 8888
 console.log(`Listening on ${PORT}`);
 app.listen(PORT);
+
+
+function urlBuilder(req, path) {
+  const baseUrl = url.format({
+    protocol: req.protocol,
+    host: req.get("host"),
+    pathname: req.baseUrl
+  })
+  return baseUrl + path
+}
